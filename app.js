@@ -5,7 +5,7 @@ const port = 3000;
 app.get("/pins/:lat/:lon", (req, res) => {
   const lat = req.params.lat;
   const lon = req.params.lon;
-  return res.send("Lat: " + lat + "\nLon: " + lon);
+  return res.send("Lat: " + lat + "Lon: " + lon);
 });
 
 app.get("/", (req, res) => res.send("Hello World!"));
