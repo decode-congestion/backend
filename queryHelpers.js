@@ -10,11 +10,28 @@ const knexPostgis = require("knex-postgis");
 const st = knexPostgis(knex);
 
 
-const sql = knex.select("point", st.asText("point"))
+const sql = knex.select("stop_no", "point")
 	.from("stops")
-	.toString();
+	.where(st.dwithin("point", st.setSRID(st.makePoint(-123.114584, 49.263118), 4326),100))
+	.then(rows => console.log(rows));
 
-console.log(sql)
+
+// 	SELECT
+//   id,
+//   stop_no,
+//   stops.point,
+//   ST_Y(stops.point) as lat,
+//   ST_X(stops.point) as long
+// FROM stops
+// WHERE
+//   ST_DWithin(
+//     stops.point,
+//     ST_SetSRID(ST_MakePoint(-123.114584, 49.263118), 4326),
+//     100,
+//     TRUE
+//   );
+
+//console.log(sql)
 
 // knex
 //   .from("stops")
@@ -29,15 +46,15 @@ console.log(sql)
  // knex("stops")
  //   .select("point", st.asText("point"));
 
-knex
-  .from("stops")
-  .select("*")
-  .where("stop_no", "<", 50050)
-  .then(rows => {
-    for (row of rows) {
-      console.log(`${row["id"]} ${row["stop_no"]} ${row["point"]}`);
-    }
-  });
+// knex
+//   .from("stops")
+//   .select("*")
+//   .where("stop_no", "<", 50050)
+//   .then(rows => {
+//     for (row of rows) {
+//       console.log(`${row["id"]} ${row["stop_no"]} ${row["point"]}`);
+//     }
+//   });
 
 // knex
 //   .from("stops")
