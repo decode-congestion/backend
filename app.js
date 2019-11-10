@@ -1,6 +1,6 @@
 const app = require("express")();
 const http = require("http").createServer(app);
-const port = 3000;
+const port = 3003;
 const db = require("./data/db.js");
 const io = require("socket.io")(http);
 const { listenToSockets } = require("./main/listener.js");
@@ -49,6 +49,26 @@ app.get("/api/routes", async (req, res) => {
   res.json({ routes });
 });
 app.get("/", (req, res) => res.send("Hello World!"));
+
+
+app.get('/api/vehicles', async (req, res) => {
+    const response = await knex.raw(`
+        SELECT DISTINCT vp.vehicle_no 
+        , max_rec
+        , ST_Y(vp.point) as lat
+        , ST_X(vp.point) as long
+        FROM 
+        (
+        SELECT vehicle_no, max(recorded_at) as max_rec 
+        FROM vehicle_positions
+        GROUP BY vehicle_no 
+        ) T1 
+        INNER JOIN vehicle_positions vp ON vp.vehicle_no = T1.vehicle_no AND vp.recorded_at = T1.max_rec
+        ORDER BY vp.vehicle_no 
+    `)
+
+    res.json(response.rows)
+})
 
 http.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
