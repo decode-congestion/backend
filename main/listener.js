@@ -1,70 +1,70 @@
-const { knex, st } = require("../data/knexSetup");
-const { BusStop, Coordinates } = require("./location_models.js");
+const {knex, st} = require("../data/knexSetup");
+const {BusStop, Coordinates} = require("./location_models.js");
 const SRID = 4326; // standard SR id format for North America
 const DISTANCE_THRESHOLD = 15; // distance in m
 
-module.exports = { listenToSockets, _nearestStopOrNull };
+module.exports = {listenToSockets, _nearestStopOrNull};
 
 function listenToSockets(io) {
-  const defaultNS = io.of("/"); // on initial opening, clients get dropped in the central pool
-  defaultNS.on("connection", socket => {
-    console.log("Someone has joined the default pool");
+    const defaultNS = io.of("/"); // on initial opening, clients get dropped in the central pool
+    defaultNS.on("connection", socket => {
+        console.log("Someone has joined the default pool");
 
-    const userLocationTuple = _locateUserInitially(
-      new Coordinates(...socket.handshake.query)
-    );
-    switch (
-      userLocationTuple[0] // determine where they are
-    ) {
-      case "on bus":
-        socket.emit("shunt", "riding", userLocationTuple[1]);
-        break;
-      case "waiting":
-        socket.emit("shunt", "idling", userLocationTuple[1]);
-        break;
-      case "not close":
-        socket.emit("shunt", "fuck off");
-        break;
-      default:
-        // TODO: throw an error
-        break;
-    }
+        const userLocationTuple = _locateUserInitially(
+            new Coordinates(...socket.handshake.query)
+        );
+        switch (
+            userLocationTuple[0] // determine where they are
+            ) {
+            case "on bus":
+                socket.emit("shunt", "riding", userLocationTuple[1]);
+                break;
+            case "waiting":
+                socket.emit("shunt", "idling", userLocationTuple[1]);
+                break;
+            case "not close":
+                socket.emit("shunt", "fuck off");
+                break;
+            default:
+                // TODO: throw an error
+                break;
+        }
 
-    socket.on("update", location => {
-      const stop = _nearestStopOrNull(location);
-      if (!!stop) socket.emit("shunt", "idling", stop);
+        socket.on("update", location => {
+            const stop = _nearestStopOrNull(location);
+            if (!!stop) socket.emit("shunt", "idling", stop);
+        });
+        socket.on("disconnect", () => {
+            // person has left, either because they moved or because they turned off their app
+            // TODO
+        });
     });
-    socket.on("disconnect", () => {
-      // person has left, either because they moved or because they turned off their app
-      // TODO
-    });
-  });
 
-  const idling = io.of("/idling");
-  idling.on("connection", socket => {
-    console.log("Someone started idling");
-    socket.client.busStop = socket.handshake.query["stop_num"];
-    socket.join(socket.client.busStop);
+    const idling = io.of("/idling");
+    idling.on("connection", socket => {
+        console.log("Someone started idling");
+        socket.client.busStop = socket.handshake.query["stop_num"];
+        socket.join(socket.client.busStop);
 
-    socket.on("update", location => {
-      if (_nearestStopOrNull(location) !== socket.client.busStop) {
-        socket.leave(socket.client.busStop);
-        socket.emit("shunt", "fuck off");
-      }
+        socket.on("update", location => {
+            if (_nearestStopOrNull(location) !== socket.client.busStop) {
+                socket.leave(socket.client.busStop);
+                socket.emit("shunt", "fuck off");
+            }
+        });
+        socket.on("disconnect", () => {
+            // person has disconnected, either because they moved to `/riding` or because they turned off their app
+        });
     });
-    socket.on("disconnect", () => {
-      // person has disconnected, either because they moved to `/riding` or because they turned off their app
-    });
-  });
 
-  const riding = io.of("/riding");
-  riding.on("connection", socket => {
-    console.log("Someone started riding");
+    const riding = io.of("/riding");
+    riding.on("connection", socket => {
+        console.log("Someone started riding");
 
-    socket.on("disconnect", () => {
-      // person has disconnected, because they've left the bus or because they've turned off their app
+        socket.on("disconnect", () => {
+            // person has disconnected, because they've left the bus or because they've turned off their app
+        });
     });
-  });
 }
 
 /**
@@ -74,8 +74,9 @@ function listenToSockets(io) {
  * @private
  */
 function _determineLocation(coords) {
-  return undefined; // TODO
+    return undefined; // TODO
 }
+
 /**
  * Decide on the initial location of a user once they open the app.
  *
@@ -86,11 +87,12 @@ function _determineLocation(coords) {
  * @private
  */
 function _locateUserInitially(coords) {
-  const obj = _determineLocation(coords);
-  if (obj instanceof BusStop) return ["waiting", obj];
-  else if (obj instanceof Bus) return ["on bus", obj];
-  else return ["not close", obj];
+    const obj = _determineLocation(coords);
+    if (obj instanceof BusStop) return ["waiting", obj];
+    else if (obj instanceof Bus) return ["on bus", obj];
+    else return ["not close", obj];
 }
+
 /**
  * Returns the stop number of the nearest bus stop if within a certain radius, or else `null`.
  * @param loc coordinates of the user
@@ -98,25 +100,19 @@ function _locateUserInitially(coords) {
  * @private
  */
 async function _nearestStopOrNull(loc) {
-  // queries PostGIS for all stops where radial distance < 15m
-  const origin = st.setSRID(st.makePoint(loc.long, loc.lat), SRID);
-  var nearestStop = await knex
-    .select(
-      "stop_no",
-      st.y("point").as("latitude"),
-      st.x("point").as("longitude")
-    )
-    .from("stops")
-    .where(st.dwithin("point", origin, DISTANCE_THRESHOLD, true))
-    .orderBy(st.distance("point", origin), "asc")
-    .limit(1);
+    // queries PostGIS for all stops where radial distance < 15m
+    const origin = st.setSRID(st.makePoint(loc.long, loc.lat), SRID);
+    const nearestStop = await knex
+        .select("stop_no", st.y("point").as("latitude"), st.x("point").as("longitude"))
+        .from("stops")
+        .where(st.dwithin("point", origin, DISTANCE_THRESHOLD, true))
+        .orderBy(st.distance("point", origin), "asc")
+        .limit(1);
 
-  if (nearestStop.length === 0) {
-    return null;
-  }
+    if (nearestStop.length === 0) return null;
 
-  return new BusStop(
-    nearestStop[0]["stop_no"],
-    new Coordinates(nearestStop[0]["latitude"], nearestStop[0]["longitude"])
-  ); // TODO
+    return new BusStop(
+        nearestStop[0]["stop_no"],
+        new Coordinates(nearestStop[0]["latitude"], nearestStop[0]["longitude"])
+    );
 }

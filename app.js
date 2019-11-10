@@ -3,15 +3,25 @@ const http = require("http").createServer(app);
 const port = 3000;
 const db = require("./data/db.js");
 const io = require("socket.io")(http);
-const { listenToSockets, _nearestStopOrNull } = require("./main/listener.js");
+const { listenToSockets } = require("./main/listener.js");
+const { knex, st } = require("./data/knexSetup");
+
 app.get("/pins/:lat/:lon", (req, res) => {
-  const lat = req.params.lat;
-  const lon = req.params.lon;
-  return res.send("Lat: " + lat + " Lon: " + lon);
+    const lat = req.params.lat;
+    const lon = req.params.lon;
+    return res.send("Lat: " + lat + " Lon: " + lon);
+});
+app.get('/api/users/:userId/collected', async (req, res) => {
+    const userId = req.params['userId'];
+    res.json(await knex.raw(
+    `select vehicle_id, l.*
+           from collected_vehicles cv join loots l cv.user_id = l.user_id
+           where user_id = ${userId}`
+    ));
 });
 app.get("/api/routes", async (req, res) => {
-  const routes = await db("routes");
-  res.json({ routes });
+    const routes = await db("routes");
+    res.json({routes});
 });
 app.get("/", (req, res) => res.send("Hello World!"));
 
