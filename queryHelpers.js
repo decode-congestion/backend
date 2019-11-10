@@ -12,6 +12,16 @@ const db = knex({ dialect: "postgres" });
 
 knex
   .from("stops")
+  .select("point")
+  .where("stop_no", "=", 50001)
+  .then(rows => {
+    for (row of rows) {
+      console.log(`${row["point"]}`);
+    }
+  });
+
+knex
+  .from("stops")
   .select("*")
   .where("stop_no", "<", 50050)
   .then(rows => {

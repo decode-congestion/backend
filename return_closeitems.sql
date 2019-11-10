@@ -1,3 +1,3 @@
-SELECT *
-FROM your_table
-WHERE ST_Distance_Sphere(the_geom, ST_MakePoint(your_lon,your_lat)) <= radius_mi * 1609.34
+SELECT id, stop_no 
+FROM stops 
+WHERE ST_DWithin('0101000020E610000025581CCEFCC85EC05BCEA5B8AAA44840', ST_SetSRID(ST_MakePoint(-123.114584, 49.263118),4326, 5);
