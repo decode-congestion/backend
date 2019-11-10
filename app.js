@@ -13,11 +13,10 @@ app.get("/pins/:lat/:lon", (req, res) => {
 });
 app.get('/api/users/:userId/collected', async (req, res) => {
     const userId = req.params['userId'];
-    res.json(await knex.raw(
-    `select cv.vehicle_id, l.*
-           from collected_vehicles as cv join loots as l on cv.user_id = l.user_id
-           where user_id = ${userId} and l.vehicle_id is null`
-    ));
+    res.json({
+        cv: await knex.select('vehicle_id').from('collected_vehicles').where(`user_id = ${userId}`).rows,
+        loots: await knex.select('*').from('loots').where(`user_id = ${user_id} and vehicle_id is null`).rows
+    });
 });
 app.get("/api/routes", async (req, res) => {
     const routes = await db("routes");
