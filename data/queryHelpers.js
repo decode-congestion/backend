@@ -6,15 +6,26 @@ const configOptions = knexfile[env];
 const knex = require("knex")(configOptions);
 const knexPostgis = require("knex-postgis");
 
-
 const st = knexPostgis(knex);
 
-
-const sql = knex.select("stop_no", "point")
-	.from("stops")
-	.where(st.dwithin("point", st.setSRID(st.makePoint(-123.114584, 49.263118), 4326),100))
-	.then(rows => console.log(rows));
-
+knex
+  .select("stop_no", "point", st.y("point").as("lat"), st.x("point").as("long"))
+  .from("stops")
+  .where(
+    st.dwithin(
+      "point",
+      st.setSRID(st.makePoint(-123.114584, 49.263118), 4326),
+      100,
+      true
+    )
+  )
+  .then(rows => {
+    for (row of rows) {
+      console.log(
+        `${row["stop_no"]} ${row["point"]} ${row["lat"]} ${row["long"]}`
+      );
+    }
+  });
 
 // 	SELECT
 //   id,
@@ -43,8 +54,8 @@ const sql = knex.select("stop_no", "point")
 //     }
 //   });
 
- // knex("stops")
- //   .select("point", st.asText("point"));
+// knex("stops")
+//   .select("point", st.asText("point"));
 
 // knex
 //   .from("stops")
