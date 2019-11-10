@@ -15,7 +15,7 @@ app.get('/api/users/:userId/collected', async (req, res) => {
     const userId = req.params['userId'];
     res.json(await knex.raw(
     `select vehicle_id, l.*
-           from collected_vehicles cv join loots l cv.user_id = l.user_id
+           from collected_vehicles as cv join loots as l on cv.user_id = l.user_id
            where user_id = ${userId}`
     ));
 });
