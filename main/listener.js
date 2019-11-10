@@ -1,4 +1,8 @@
-module.exports = listenToSockets;
+const { knex, st } = require("../data/knexSetup");
+const SRID = 4326; // standard SR id format for North America
+const DISTANCE_THRESHOLD = 15; // distance in m
+
+module.exports = { listenToSockets, _nearestStopOrNull };
 
 function listenToSockets(io) {
   const defaultNS = io.of("/"); // on initial opening, clients get dropped in the central pool
@@ -93,6 +97,27 @@ function _locateUserInitially(coords) {
  * @private
  */
 function _nearestStopOrNull(loc) {
-  // queries PostGIS for all stops where radial distance < threshold
-  return undefined; // TODO
+  // queries PostGIS for all stops where radial distance < 15m
+  const origin = st.makePoint(loc.long, loc.lat);
+  const nearestStop = knex
+    .select("stop_no")
+    .from("stops")
+    .where(
+      st.dwithin("point", st.setSRID(origin, SRID), DISTANCE_THRESHOLD, true)
+    )
+    .orderBy(st.distance("point", origin), "asc")
+    .limit(1);
+  // .then(rows => {
+  //   for (row of rows) {
+  //     console.log(
+  //       `${row["stop_no"]} ${row["point"]} ${row["lat"]} ${row["long"]}`
+  //     );
+  //   }
+  // });
+
+  if (nearestStop === []) {
+    return null;
+  }
+
+  return nearestStop; // TODO
 }
