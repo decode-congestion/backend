@@ -1,6 +1,7 @@
 SELECT DISTINCT vp.vehicle_no 
 , max_rec
-, vp.point  
+, ST_Y(vp.point) as lat
+, ST_X(vp.point) as long
 FROM 
 (
 SELECT vehicle_no, max(recorded_at) as max_rec 
