@@ -1,4 +1,5 @@
 const { knex, st } = require("../data/knexSetup");
+const { BusStop, Coordinates } = require("./location_models.js");
 const SRID = 4326; // standard SR id format for North America
 const DISTANCE_THRESHOLD = 15; // distance in m
 
@@ -93,31 +94,29 @@ function _locateUserInitially(coords) {
 /**
  * Returns the stop number of the nearest bus stop if within a certain radius, or else `null`.
  * @param loc coordinates of the user
- * @returns {string|null} Stop Number or null if outside range of any stop.
+ * @returns {BusStop|null} Stop Number or null if outside range of any stop.
  * @private
  */
-function _nearestStopOrNull(loc) {
+async function _nearestStopOrNull(loc) {
   // queries PostGIS for all stops where radial distance < 15m
-  const origin = st.makePoint(loc.long, loc.lat);
-  const nearestStop = knex
-    .select("stop_no")
-    .from("stops")
-    .where(
-      st.dwithin("point", st.setSRID(origin, SRID), DISTANCE_THRESHOLD, true)
+  const origin = st.setSRID(st.makePoint(loc.long, loc.lat), SRID);
+  var nearestStop = await knex
+    .select(
+      "stop_no",
+      st.y("point").as("latitude"),
+      st.x("point").as("longitude")
     )
+    .from("stops")
+    .where(st.dwithin("point", origin, DISTANCE_THRESHOLD, true))
     .orderBy(st.distance("point", origin), "asc")
     .limit(1);
-  // .then(rows => {
-  //   for (row of rows) {
-  //     console.log(
-  //       `${row["stop_no"]} ${row["point"]} ${row["lat"]} ${row["long"]}`
-  //     );
-  //   }
-  // });
 
-  if (nearestStop === []) {
+  if (nearestStop.length === 0) {
     return null;
   }
 
-  return nearestStop; // TODO
+  return new BusStop(
+    nearestStop[0]["stop_no"],
+    new Coordinates(nearestStop[0]["latitude"], nearestStop[0]["longitude"])
+  ); // TODO
 }

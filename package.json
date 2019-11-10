@@ -4,7 +4,7 @@
   "description": "mimimadeadescription",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha",
     "start": "nodemon app.js"
   },
   "repository": {
@@ -18,10 +18,12 @@
   },
   "homepage": "https://github.com/decode-congestion/backend#readme",
   "dependencies": {
+    "chai": "^4.2.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "knex": "^0.20.1",
     "knex-postgis": "^0.8.1",
+    "mocha": "^6.2.2",
     "pg": "^7.12.1",
     "pg-native": "^3.0.0",
     "socket.io": "^2.3.0"
