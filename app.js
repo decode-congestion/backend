@@ -109,6 +109,33 @@ app.get('/api/stops/:route/:direction', async (req, res) => {
   res.json(response.rows)
 })
 
+
+app.get('/api/jousts/:busA/:busB', async (req, res) => {
+
+  const vehicleA_id = await knex.select('id').table('vehicles').where('vehicle_no', '=', req.params.busA)
+  const vehicleB_id = await knex.select('id').table('vehicles').where('vehicle_no', '=', req.params.busB)
+
+  console.log(vehicleA_id, vehicleB_id)
+
+  const newJoust = await knex('jousts').insert({}).returning('id')
+
+  console.log(newJoust[0])
+
+  console.log(vehicleA_id[0].id)
+
+  await knex('vehicle_jousts').insert({
+    vehicle_id: vehicleA_id[0].id,
+    joust_id: newJoust[0]
+  })
+
+  await knex('vehicle_jousts').insert({
+    vehicle_id: vehicleB_id[0].id,
+    joust_id: newJoust[0]
+  })
+
+  res.json('hello world')
+})
+
 http.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
 listenToSockets(io);
