@@ -11,7 +11,6 @@ module.exports = {
     }
     // dialect: "postgres"
   },
-
   staging: {
     client: "postgresql",
     connection: {
@@ -27,7 +26,6 @@ module.exports = {
       tableName: "knex_migrations"
     }
   },
-
   production: {
     client: "postgresql",
     connection: {
