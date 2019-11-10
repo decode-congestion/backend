@@ -70,6 +70,30 @@ app.get('/api/vehicles', async (req, res) => {
     res.json(response.rows)
 })
 
+app.get('/api/routes', async (req, res) => {
+  const rows = await knex.select().table('routes')
+
+  res.json(rows)
+})
+
+app.get('/api/stops/:route/:direction', async (req, res) => {
+  const response = await knex.raw(`
+    select
+    rs.route_id
+    , r.route_no
+    , s.stop_no
+    , ST_Y(s.point) as lat
+    , ST_X(s.point) as long
+    from routes_stops rs
+    left join routes r on rs.route_id = r.id
+    left join stops s on rs.stop_id = s.id
+    where r.route_no = '${req.params.route}' AND r.direction = '${req.params.direction}'
+    order by stop_no
+  `)
+
+  res.json(response.rows)
+})
+
 http.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
 listenToSockets(io);

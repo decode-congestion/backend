@@ -18,6 +18,8 @@ function listenToSockets(io) {
             ) {
             case "on bus":
                 socket.emit("shunt", "riding", userLocationTuple[1]);
+                // const busId = 19005 // vehicle no?
+                // socket.emit("shunt", "riding", busId);
                 break;
             case "waiting":
                 socket.emit("shunt", "idling", userLocationTuple[1]);
@@ -32,6 +34,17 @@ function listenToSockets(io) {
 
         socket.on("update", location => {
             const stop = _nearestStopOrNull(location);
+            
+            // check to see if user is on Bus
+            // receive user ID
+            // payload.id
+            const userId = location.id
+            // see if user is rider
+            const amIOnBus = _amIOnBus(userId)
+            if (amIOnBus) {
+                socket.emit("shunt", { namespace: "riding", busId: amIOnBus.vehicle_id})
+            }
+
             if (!!stop) socket.emit("shunt", "idling", stop);
         });
         socket.on("disconnect", () => {
@@ -115,4 +128,17 @@ async function _nearestStopOrNull(loc) {
         nearestStop[0]["stop_no"],
         new Coordinates(nearestStop[0]["latitude"], nearestStop[0]["longitude"])
     );
+}
+
+
+async function _amIOnBus(userId) {
+    // // queries PostGIS for all stops where radial distance < 15m
+    // const origin = st.setSRID(st.makePoint(loc.long, loc.lat), SRID);
+    const riders = await knex
+        .select().from("riders").where('user_id', '=', userId)
+        .limit(1);
+
+    if (riders.length === 0) return null;
+
+    return riders[0]
 }
