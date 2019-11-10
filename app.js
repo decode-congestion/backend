@@ -17,4 +17,4 @@ app.get("/", (req, res) => res.send("Hello World!"));
 
 http.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
-listenToSockets(io);
+require("./main/listener.js")(io);
