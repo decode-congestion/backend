@@ -6,19 +6,28 @@ const configOptions = knexfile[env];
 const knex = require("knex")(configOptions);
 const knexPostgis = require("knex-postgis");
 
-const db = knex({ dialect: "postgres" });
 
-// const st = knexPostgis(db);
+const st = knexPostgis(knex);
 
-knex
-  .from("stops")
-  .select("point")
-  .where("stop_no", "=", 50001)
-  .then(rows => {
-    for (row of rows) {
-      console.log(`${row["point"]}`);
-    }
-  });
+
+const sql = knex.select("point", st.asText("point"))
+	.from("stops")
+	.toString();
+
+console.log(sql)
+
+// knex
+//   .from("stops")
+//   .select("point")
+//   .where("stop_no", "=", 50001)
+//   .then(rows => {
+//     for (row of rows) {
+//       console.log(`${st.x(row["point"])}`);
+//     }
+//   });
+
+ // knex("stops")
+ //   .select("point", st.asText("point"));
 
 knex
   .from("stops")
