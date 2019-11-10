@@ -74,6 +74,10 @@ function listenToSockets(io) {
     riding.on("connection", socket => {
         console.log("Someone started riding");
 
+        socket.on("join", ({  busId }) => {
+            socket.join(busId);
+        })
+
         socket.on("disconnect", () => {
             // person has disconnected, because they've left the bus or because they've turned off their app
         });
