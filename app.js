@@ -5,6 +5,13 @@ const db = require("./data/db.js");
 const io = require("socket.io")(http);
 const { listenToSockets } = require("./main/listener.js");
 const { knex, st } = require("./data/knexSetup");
+const bodyParser = require("body-parser");
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// parse application/json
+// app.use(bodyParser.json());
 
 app.get("/pins/:lat/:lon", (req, res) => {
   const lat = req.params.lat;
@@ -43,7 +50,15 @@ app.get("/api/users/:userId/roster_vehicles", async (req, res) => {
       .whereNot("vehicle_id", null)
   });
 });
-// app.post("/api/users/:userId/roster_vehicles");
+// app.post("/api/users/:userId/roster_vehicles/", async (req, res) => {
+//   const body = req.body;
+//   await knex("roster_vehicles")
+//     .where("user_id", userId)
+//     .del();
+//   for (const vehicle of body.roster) {
+//     await knex("roster_vehicles").insert({});
+//   }
+// });
 app.get("/api/routes", async (req, res) => {
   const routes = await db("routes");
   res.json({ routes });
