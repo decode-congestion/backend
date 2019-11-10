@@ -14,9 +14,9 @@ app.get("/pins/:lat/:lon", (req, res) => {
 app.get('/api/users/:userId/collected', async (req, res) => {
     const userId = req.params['userId'];
     res.json(await knex.raw(
-    `select vehicle_id, l.*
+    `select cv.vehicle_id, l.*
            from collected_vehicles as cv join loots as l on cv.user_id = l.user_id
-           where user_id = ${userId}`
+           where user_id = ${userId} and l.vehicle_id is null`
     ));
 });
 app.get("/api/routes", async (req, res) => {
